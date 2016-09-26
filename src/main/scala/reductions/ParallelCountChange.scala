@@ -45,9 +45,43 @@ object ParallelCountChange {
   /** Returns the number of ways change can be made from the specified list of
    *  coins for the specified amount of money.
    */
-  def countChange(money: Int, coins: List[Int]): Int = {
-    ???
-  }
+    def countChange(money: Int, coins: List[Int]): Int = {
+        
+      def countCoins(s: List[Int], rest: Int, counter: Int): Int = {
+        if (!s.isEmpty && rest >= 0) {
+          val curRest = rest - s.head
+          if (!(curRest < 0)) {
+            if (curRest >= s.head) {
+              if (s.size > 1) {
+                countCoins(s, curRest, countCoins(s.tail, curRest, counter) )
+              } else
+                countCoins(s, curRest, counter)
+            } else if (curRest == 0 && s.size == 1) {
+               counter + 1
+            } else
+               countCoins(s.tail, curRest, counter)
+          } else
+            counter
+        } else
+          counter
+      }
+  
+      def getCombinations(s: List[Int]): Int = { innerGetCombinations(List(), s, 0) }
+  
+      def innerGetCombinations(prefix: List[Int], s: List[Int], counter : Int): Int = {
+        if (s.size > 0) {
+          val curComb = prefix :+ s.head
+          innerGetCombinations(prefix, s.tail, innerGetCombinations(prefix :+ s.head, s.tail, countCoins(curComb, money, counter)));
+        } else
+          counter
+      }
+      if (money == 0) {
+        1
+      } else {
+        val s = coins.sorted.reverse
+        getCombinations(s)
+      }
+    }
 
   type Threshold = (Int, List[Int]) => Boolean
 
