@@ -79,6 +79,22 @@ object ParallelCountChange {
     }
   }
 
+  def parCountChangeOld(money: Int, coins: List[Int], threshold: Threshold): Int = {
+    if (money == 0) {
+      1
+    } else {
+      def iter(coins: List[List[Int]], counter: Int): Int = {
+        coins match {
+          case Nil => counter
+          case x :: xs => iter(xs, countCoins(x, money, counter))
+        }
+      }
+      val c = innerGetCombinations(List(), coins.sorted, 0, threshold)
+      println(c)
+      iter(c, 0)
+    }
+  }
+      
   def countChange(money: Int, coins: List[Int]): Int = {
       val threshold: Threshold = (a, b) => { false }
       parCountChange(money, coins, threshold)
@@ -93,13 +109,23 @@ object ParallelCountChange {
     if (money == 0) {
       1
     } else {
-      def iter(coins: List[List[Int]], counter: Int): Int = {
-        coins match {
-          case Nil => counter
-          case x :: xs => iter(xs, countCoins(x, money, counter))
+      coins match {
+        case Nil => 0
+        case x :: xs => {
+          if (money < 0) {
+            0
+          } else {
+            val rest = money - x
+            if (rest < 0) {
+              0
+            } else if (rest > 0) {
+              parCountChange(rest, coins, threshold) + parCountChange(money, xs, threshold)
+            } else {
+              1
+            }
+          }
         }
       }
-      iter(innerGetCombinations(List(), coins.sorted, 0, threshold), 0)
     }
   }
 
