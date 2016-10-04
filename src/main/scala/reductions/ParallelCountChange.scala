@@ -45,43 +45,44 @@ object ParallelCountChange {
   /** Returns the number of ways change can be made from the specified list of
    *  coins for the specified amount of money.
    */
-    def countChange(money: Int, coins: List[Int]): Int = {
-        
-      def countCoins(s: List[Int], rest: Int, counter: Int): Int = {
-        if (!s.isEmpty && rest >= 0) {
-          val curRest = rest - s.head
-          if (!(curRest < 0)) {
-            if (curRest >= s.head) {
-              if (s.size > 1) {
-                countCoins(s, curRest, countCoins(s.tail, curRest, counter) )
-              } else
-                countCoins(s, curRest, counter)
-            } else if (curRest == 0 && s.size == 1) {
-               counter + 1
-            } else
-               countCoins(s.tail, curRest, counter)
+  def countCoins(s: List[Int], rest: Int, counter: Int): Int = {
+    if (!s.isEmpty && rest >= 0) {
+      val curRest = rest - s.head
+      if (!(curRest < 0)) {
+        if (curRest >= s.head) {
+          if (s.size > 1) {
+            countCoins(s, curRest, countCoins(s.tail, curRest, counter) )
           } else
-            counter
+            countCoins(s, curRest, counter)
+        } else if (curRest == 0 && s.size == 1) {
+           counter + 1
         } else
-          counter
+           countCoins(s.tail, curRest, counter)
+      } else
+        counter
+    } else
+      counter
+  }
+
+  def innerGetCombinations(prefix: List[Int], s: List[Int], depth: Int, threshold: Threshold): List[List[Int]] = {
+    if (s.size > 0) {
+      val curComb = s.head :: prefix
+      val (l1, l2) = (innerGetCombinations(curComb, s.tail, depth + 1, threshold), innerGetCombinations(prefix, s.tail, depth + 1, threshold))
+      (l1, l2) match {
+        case (Nil, Nil) => List(curComb) 
+        case (x1, Nil) => List(curComb) ::: x1
+        case (Nil, x2) => List(curComb) ::: x2
+        case (x1, x2) => List(curComb) ::: x1 ::: x2
       }
-  
-      def getCombinations(s: List[Int]): Int = { innerGetCombinations(List(), s, 0) }
-  
-      def innerGetCombinations(prefix: List[Int], s: List[Int], counter : Int): Int = {
-        if (s.size > 0) {
-          val curComb = prefix :+ s.head
-          innerGetCombinations(prefix, s.tail, innerGetCombinations(prefix :+ s.head, s.tail, countCoins(curComb, money, counter)));
-        } else
-          counter
-      }
-      if (money == 0) {
-        1
-      } else {
-        val s = coins.sorted.reverse
-        getCombinations(s)
-      }
+    } else {
+      Nil
     }
+  }
+
+  def countChange(money: Int, coins: List[Int]): Int = {
+      val threshold: Threshold = (a, b) => { false }
+      parCountChange(money, coins, threshold)
+  }
 
   type Threshold = (Int, List[Int]) => Boolean
 
@@ -89,7 +90,17 @@ object ParallelCountChange {
    *  specified list of coins for the specified amount of money.
    */
   def parCountChange(money: Int, coins: List[Int], threshold: Threshold): Int = {
-    ???
+    if (money == 0) {
+      1
+    } else {
+      def iter(coins: List[List[Int]], counter: Int): Int = {
+        coins match {
+          case Nil => counter
+          case x :: xs => iter(xs, countCoins(x, money, counter))
+        }
+      }
+      iter(innerGetCombinations(List(), coins.sorted, 0, threshold), 0)
+    }
   }
 
   /** Threshold heuristic based on the starting money. */
