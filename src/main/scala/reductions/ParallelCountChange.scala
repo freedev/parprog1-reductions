@@ -69,10 +69,10 @@ object ParallelCountChange {
       val curComb = s.head :: prefix
       val (l1, l2) = (innerGetCombinations(curComb, s.tail, depth + 1, threshold), innerGetCombinations(prefix, s.tail, depth + 1, threshold))
       (l1, l2) match {
+        case (x1, x2) => (x1 ::: x2) ::: List(curComb)
+        case (x1, Nil) => curComb :: x1
+        case (Nil, x2) => curComb :: x2
         case (Nil, Nil) => List(curComb) 
-        case (x1, Nil) => List(curComb) ::: x1
-        case (Nil, x2) => List(curComb) ::: x2
-        case (x1, x2) => List(curComb) ::: x1 ::: x2
       }
     } else {
       Nil
