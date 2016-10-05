@@ -73,7 +73,7 @@ object ParallelParenthesesBalancing {
             if (acc > 0 || arg2)
               traverse(idx + 1, until, acc - 1, arg2)
             else 
-              -1
+              Int.MinValue
           } else
             traverse(idx + 1, until, acc, arg2)
         } else
