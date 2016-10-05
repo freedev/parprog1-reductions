@@ -45,56 +45,6 @@ object ParallelCountChange {
   /** Returns the number of ways change can be made from the specified list of
    *  coins for the specified amount of money.
    */
-  def countCoins(s: List[Int], rest: Int, counter: Int): Int = {
-    if (!s.isEmpty && rest >= 0) {
-      val curRest = rest - s.head
-      if (!(curRest < 0)) {
-        if (curRest >= s.head) {
-          if (s.size > 1) {
-            countCoins(s, curRest, countCoins(s.tail, curRest, counter) )
-          } else
-            countCoins(s, curRest, counter)
-        } else if (curRest == 0 && s.size == 1) {
-           counter + 1
-        } else
-           countCoins(s.tail, curRest, counter)
-      } else
-        counter
-    } else
-      counter
-  }
-
-  def innerGetCombinations(prefix: List[Int], s: List[Int], depth: Int, threshold: Threshold): List[List[Int]] = {
-    if (s.size > 0) {
-      val curComb = s.head :: prefix
-      val (l1, l2) = (innerGetCombinations(curComb, s.tail, depth + 1, threshold), innerGetCombinations(prefix, s.tail, depth + 1, threshold))
-      (l1, l2) match {
-        case (x1, x2) => (x1 ::: x2) ::: List(curComb)
-        case (x1, Nil) => curComb :: x1
-        case (Nil, x2) => curComb :: x2
-        case (Nil, Nil) => List(curComb) 
-      }
-    } else {
-      Nil
-    }
-  }
-
-  def parCountChangeOld(money: Int, coins: List[Int], threshold: Threshold): Int = {
-    if (money == 0) {
-      1
-    } else {
-      def iter(coins: List[List[Int]], counter: Int): Int = {
-        coins match {
-          case Nil => counter
-          case x :: xs => iter(xs, countCoins(x, money, counter))
-        }
-      }
-      val c = innerGetCombinations(List(), coins.sorted, 0, threshold)
-      println(c)
-      iter(c, 0)
-    }
-  }
-      
   def countChange(money: Int, coins: List[Int]): Int = {
       val threshold: Threshold = (a, b) => { false }
       parCountChange(money, coins, threshold)
@@ -119,7 +69,12 @@ object ParallelCountChange {
             if (rest < 0) {
               0
             } else if (rest > 0) {
-              parCountChange(rest, coins, threshold) + parCountChange(money, xs, threshold)
+              if (threshold(money, coins)) {
+                val (p1, p2) = parallel(parCountChange(rest, coins, threshold), parCountChange(money, xs, threshold))
+                p1 + p2
+              } else {
+                parCountChange(rest, coins, threshold) + parCountChange(money, xs, threshold)
+              }
             } else {
               1
             }
@@ -129,17 +84,53 @@ object ParallelCountChange {
     }
   }
 
+  /*
+[Test Description] moneyThreshold should return true when the money is equal to two-thirds of the starting money
+[Observed Error] false did not equal true moneyThreshold should return true, hint: starting money: 3
+[Lost Points] 1
+   */
   /** Threshold heuristic based on the starting money. */
-  def moneyThreshold(startingMoney: Int): Threshold =
-    ???
+  def moneyThreshold(startingMoney: Int): Threshold = {
+    // moneyThreshold should return false when the money is greater than two-thirds of the starting money
+    val threshold: Threshold = (a, b) => {
+      val twoThirdsStartingMoney = ((startingMoney*2)/3)
+//      println(((a*2)/3) + " " + startingMoney)
+      a > twoThirdsStartingMoney
+    }
+    threshold
+  }
 
+  /*
+[Test Description] totalCoinsThreshold should return false when the number of coins is greater than two-thirds of the initial number of coins
+[Observed Error] true did not equal false totalCoinsThreshold should return false, hint: initial number of coins: 3
+[Test Description] totalCoinsThreshold should return true when the number of coins is < two-thirds of the initial number of coins
+[Observed Error] false did not equal true totalCoinsThreshold should return true, hint: initial number of coins: 3
+[Lost Points] 1
+
+[Test Description] totalCoinsThreshold should return true when the number of coins is equal to two-thirds of the initial number of coins
+[Observed Error] false did not equal true totalCoinsThreshold should return true, hint: initial number of coins: 3
+[Lost Points] 1
+
+   */
+  
   /** Threshold heuristic based on the total number of initial coins. */
-  def totalCoinsThreshold(totalCoins: Int): Threshold =
-    ???
+  def totalCoinsThreshold(totalCoins: Int): Threshold = {
+    val threshold: Threshold = (a, b) => {
+      val twoThirdsTotalCoins = ((totalCoins*2)/3)
+//      println(((a*2)/3) + " " + startingMoney)
+      b.size > twoThirdsTotalCoins
+    }
+    threshold
+  }
 
-
+// combinedThreshold should return false when the number of coins times money greater than half of the initial number of coins times starting money
+// combinedThreshold should return true when the number of coins times money is less than or equal to half of the initial number of coins times starting money
   /** Threshold heuristic based on the starting money and the initial list of coins. */
   def combinedThreshold(startingMoney: Int, allCoins: List[Int]): Threshold = {
-    ???
+    val threshold: Threshold = (a, b) => {
+      // (b.size * a) >= ((allCoins.size * startingMoney)/2)
+      moneyThreshold(startingMoney).apply(a, b) && totalCoinsThreshold(allCoins.size).apply(a, b)
+    }
+    threshold
   }
 }
