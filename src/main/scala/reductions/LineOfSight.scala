@@ -53,7 +53,10 @@ object LineOfSight {
     (for {
       i <- from until until
     } yield {
-      input(i) / i
+      if (i == 0) 
+        0
+      else
+        input(i) / i
     }).max
   }
 
@@ -87,35 +90,47 @@ object LineOfSight {
       i <- from until until
     } yield {
       if (i == 0) {
-        0
+        output(i) = startingAngle
       } else {
         val res = input(i) / i
-        if (i == 0 && res < startingAngle)
-          output(i) = startingAngle
-        else if (i > 0 && res < output(i-1))
-          output(i) = output(i-1)
-        else {
-          output(i) = res
-        }
+        output(i) = output(i-1) max res
       }
     })
   }
 
+  /*
+  [Test Description] downsweep should correctly compute the output for a non-zero starting angle
+  [Observed Error] List(0.0, 7.0, 7.0, 11.0, 12.0) did not equal List(0.0, 8.0, 8.0, 11.0, 12.0)
+  [Lost Points] 2
+   */
   /** Pushes the maximum angle in the prefix of the array to each leaf of the
    *  reduction `tree` in parallel, and then calls `downsweepTraverse` to write
    *  the `output` angles.
    */
   def downsweep(input: Array[Float], output: Array[Float], startingAngle: Float,
     tree: Tree): Unit = {
+    
     tree match {
-      case n: Node => parallel(downsweep(input, output, startingAngle, n.left), downsweep(input, output, startingAngle, n.right))
-      case l: Leaf => downsweepSequential(input, output, startingAngle, l.from, l.until)
+      case n: Node => {
+        parallel(downsweep(input, output, startingAngle max n.left.maxPrevious, n.left), downsweep(input, output, startingAngle max n.right.maxPrevious, n.right))
+      }
+      case l: Leaf => downsweepSequential(input, output, startingAngle max l.maxPrevious, l.from, l.until)
     }
   }
 
+  /*
+[Test Description] parLineOfSight should invoke the parallel construct 30 times (15 times during upsweep and 15 times during downsweep) for an array of size 17, with threshold 1
+[Observed Error] 32 did not equal 30 (The number of parallel calls should be 30)
+[Lost Points] 3
+
+[Test Description] parLineOfSight should call parallel constuct 6 times, where the last two parallel constructs should update the 4 sections of the array (1 until 5), (5 until 9), (9 until 13), (13 until 17), respectively
+[Observed Error] success was false [During the execution of first part of 5th call to parallel construct, the indices 1 until 5 of the output array was not correctly updated]
+[Lost Points] 6
+   */
+  
   /** Compute the line-of-sight in parallel. */
   def parLineOfSight(input: Array[Float], output: Array[Float],
     threshold: Int): Unit = {
-    ???
+    downsweep(input, output, 0, upsweep(input, 1, input.size, threshold))
   }
 }

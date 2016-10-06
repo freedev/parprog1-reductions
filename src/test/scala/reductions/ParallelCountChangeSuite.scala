@@ -72,5 +72,15 @@ class ParallelCountChangeSuite extends FunSuite {
     check(3, 3, List(), true)
   }
 
+  test("test totalCoinsThreshold should work") {
+    def check(totalCoins: Int, money: Int, coins: List[Int], expected: Boolean) =
+      assert(totalCoinsThreshold(totalCoins).apply(money, coins) == expected,
+        s"totalCoinsThreshold(totalCoins).apply($money, $coins) should be $expected")
+
+    check(3, 3, List(1), true)
+  }
+
+
+  
 
 }

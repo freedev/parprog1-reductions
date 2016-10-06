@@ -88,49 +88,42 @@ object ParallelCountChange {
 [Test Description] moneyThreshold should return true when the money is equal to two-thirds of the starting money
 [Observed Error] false did not equal true moneyThreshold should return true, hint: starting money: 3
 [Lost Points] 1
+
+[Test Description] moneyThreshold should return true when the money is < two-thirds of the starting money
+[Observed Error] false did not equal true moneyThreshold should return true, hint: starting money: 3
+[Lost Points] 1
    */
   /** Threshold heuristic based on the starting money. */
-  def moneyThreshold(startingMoney: Int): Threshold = {
-    // moneyThreshold should return false when the money is greater than two-thirds of the starting money
-    val threshold: Threshold = (a, b) => {
-      val twoThirdsStartingMoney = ((startingMoney*2)/3)
-//      println(((a*2)/3) + " " + startingMoney)
-      a > twoThirdsStartingMoney
-    }
-    threshold
-  }
+//  def moneyThreshold(startingMoney: Int): Threshold = {
+//    val threshold: Threshold = (a, b) => {
+//      val twoThirdsStartingMoney = ((startingMoney*2)/3)
+//      a >= twoThirdsStartingMoney
+//    }
+//    threshold
+//  }
 
+  def moneyThreshold(startingMoney: Int): Threshold = (money, coins) => money > (2 * startingMoney) / 3
+  
   /*
-[Test Description] totalCoinsThreshold should return false when the number of coins is greater than two-thirds of the initial number of coins
-[Observed Error] true did not equal false totalCoinsThreshold should return false, hint: initial number of coins: 3
 [Test Description] totalCoinsThreshold should return true when the number of coins is < two-thirds of the initial number of coins
 [Observed Error] false did not equal true totalCoinsThreshold should return true, hint: initial number of coins: 3
 [Lost Points] 1
-
-[Test Description] totalCoinsThreshold should return true when the number of coins is equal to two-thirds of the initial number of coins
-[Observed Error] false did not equal true totalCoinsThreshold should return true, hint: initial number of coins: 3
-[Lost Points] 1
-
    */
   
   /** Threshold heuristic based on the total number of initial coins. */
-  def totalCoinsThreshold(totalCoins: Int): Threshold = {
-    val threshold: Threshold = (a, b) => {
-      val twoThirdsTotalCoins = ((totalCoins*2)/3)
-//      println(((a*2)/3) + " " + startingMoney)
-      b.size > twoThirdsTotalCoins
-    }
-    threshold
-  }
+  def totalCoinsThreshold(totalCoins: Int): Threshold = (a, b) => b.size >= (totalCoins*2)/3
 
-// combinedThreshold should return false when the number of coins times money greater than half of the initial number of coins times starting money
-// combinedThreshold should return true when the number of coins times money is less than or equal to half of the initial number of coins times starting money
+  /*
+[Test Description] combinedThreshold should return false when the number of coins times money greater than half of the initial number of coins times starting money
+[Observed Error] true did not equal false combinedThreshold should return false
+[Lost Points] 1
+
+[Test Description] combinedThreshold should return true when the number of coins times money is less than or equal to half of the initial number of coins times starting money
+[Observed Error] false did not equal true combinedThreshold should return true
+[Lost Points] 1
+
+   */
   /** Threshold heuristic based on the starting money and the initial list of coins. */
-  def combinedThreshold(startingMoney: Int, allCoins: List[Int]): Threshold = {
-    val threshold: Threshold = (a, b) => {
-      // (b.size * a) >= ((allCoins.size * startingMoney)/2)
-      moneyThreshold(startingMoney).apply(a, b) && totalCoinsThreshold(allCoins.size).apply(a, b)
-    }
-    threshold
-  }
+  def combinedThreshold(startingMoney: Int, allCoins: List[Int]): Threshold = (money, coins) => 
+      moneyThreshold(startingMoney).apply(money, coins) && totalCoinsThreshold(allCoins.size).apply(money, coins)
 }
